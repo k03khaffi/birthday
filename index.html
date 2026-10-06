@@ -269,17 +269,19 @@
     }
 
     .card-face {
-      position: absolute;
-      inset: 0;
-      backface-visibility: hidden;
-      -webkit-backface-visibility: hidden;
-      border-radius: 6px;
-      overflow: hidden;
-      border: 1.5px solid rgba(194, 14, 13, 0.5);
-      box-shadow: 
-        0 10px 28px rgba(0,0,0,0.5),
-        inset 0 0 0 1px rgba(253,250,243,0.05);
-    }
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1.5px solid rgba(194, 14, 13, 0.5);
+  box-shadow: 
+    0 10px 28px rgba(0,0,0,0.5),
+    inset 0 0 0 1px rgba(253,250,243,0.05);
+  height: 100%;
+  width: 100%;
+}
 
     /* double frame */
     .card-face::before {
@@ -387,36 +389,40 @@
     }
 
     .card-back-content {
-      position: relative;
-      z-index: 2;
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      padding: 22px 20px 18px;
-      overflow: hidden;
-    }
+  position: relative;
+  z-index: 2;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 22px 20px 18px;
+  overflow: hidden;
+  min-height: 0; /* critical for flex overflow */
+  height: 100%;
+}
 
-    .card-back-from {
-      font-size: 0.68rem;
-      letter-spacing: 0.14em;
-      text-transform: uppercase;
-      color: var(--red);
-      margin-bottom: 12px;
-      opacity: 0.9;
-      flex-shrink: 0;
-    }
+.card-back-from {
+  font-size: 0.68rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--red);
+  margin-bottom: 12px;
+  opacity: 0.9;
+  flex-shrink: 0;
+}
 
-    .card-back-text {
-      flex: 1;
-      overflow-y: auto;
-      font-size: 0.88rem;
-      line-height: 1.55;
-      color: #2A2218;
-      font-family: 'Noto Serif SC', serif;
-      padding-right: 4px;
-      -webkit-overflow-scrolling: touch;
-    }
-
+.card-back-text {
+  flex: 1 1 auto;
+  min-height: 0; /* critical for flex overflow */
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  font-size: 0.88rem;
+  line-height: 1.55;
+  color: #2A2218;
+  font-family: 'Noto Serif SC', serif;
+  padding-right: 6px;
+  touch-action: pan-y;
+}
     .card-back-text::-webkit-scrollbar {
       width: 3px;
     }
@@ -516,26 +522,26 @@
     <!-- RUNNING LINE -->
     <div class="marquee-wrap" aria-hidden="true">
       <div class="marquee-track">
-        <span class="marquee-item"><span class="lang">EN</span> Happy Birthday, Sofi!</span>
+        <span class="marquee-item">Happy Birthday, Sofi!</span>
         <span class="marquee-sep">✦</span>
-        <span class="marquee-item"><span class="lang">AR</span> عيد ميلاد سعيد يا صوفي</span>
+        <span class="marquee-item"> عيد ميلاد سعيد يا صوفي</span>
         <span class="marquee-sep">✦</span>
-        <span class="marquee-item"><span class="lang">ZH</span> 生日快乐 !</span>
+        <span class="marquee-item"> 生日快乐 !</span>
         <span class="marquee-sep">✦</span>
-        <span class="marquee-item"><span class="lang">FR</span> Joyeux anniversaire, Sofi !</span>
+        <span class="marquee-item"> Joyeux anniversaire, Sofi !</span>
         <span class="marquee-sep">✦</span>
-        <span class="marquee-item"><span class="lang">KO</span> 생일 축하합니다, 소피</span>
+        <span class="marquee-item"> 생일 축하합니다, 소피</span>
         <span class="marquee-sep">✦</span>
         <!-- duplicate for seamless loop -->
-        <span class="marquee-item"><span class="lang">EN</span> Happy Birthday, Sofi!</span>
+        <span class="marquee-item">Happy Birthday, Sofi!</span>
         <span class="marquee-sep">✦</span>
-        <span class="marquee-item"><span class="lang">AR</span> عيد ميلاد سعيد يا صوفي</span>
+        <span class="marquee-item"> عيد ميلاد سعيد يا صوفي</span>
         <span class="marquee-sep">✦</span>
-        <span class="marquee-item"><span class="lang">ZH</span> 生日快乐 !</span>
+        <span class="marquee-item"> 生日快乐 !</span>
         <span class="marquee-sep">✦</span>
-        <span class="marquee-item"><span class="lang">FR</span> Joyeux anniversaire, Sofi !</span>
+        <span class="marquee-item"> Joyeux anniversaire, Sofi !</span>
         <span class="marquee-sep">✦</span>
-        <span class="marquee-item"><span class="lang">KO</span> 생일 축하합니다, 소피</span>
+        <span class="marquee-item"> 생일 축하합니다, 소피</span>
         <span class="marquee-sep">✦</span>
       </div>
     </div>
@@ -692,11 +698,32 @@
 
   <script>
     // Flip cards on click / tap
-    document.querySelectorAll('[data-card]').forEach(card => {
-      card.addEventListener('click', () => {
-        card.classList.toggle('flipped');
-      });
-    });
+// Flip cards on click / tap
+// Flip cards on click / tap (ignore if user was scrolling the text)
+document.querySelectorAll('[data-card]').forEach(card => {
+  let touchStartY = 0;
+  let didScroll = false;
+
+  card.addEventListener('touchstart', (e) => {
+    touchStartY = e.touches[0].clientY;
+    didScroll = false;
+  }, { passive: true });
+
+  card.addEventListener('touchmove', (e) => {
+    if (Math.abs(e.touches[0].clientY - touchStartY) > 8) {
+      didScroll = true;
+    }
+  }, { passive: true });
+
+  card.addEventListener('click', (e) => {
+    // if the click originated from scrolling the text area — do not flip
+    if (didScroll) {
+      didScroll = false;
+      return;
+    }
+    card.classList.toggle('flipped');
+  });
+});
 
     // slight random jitter for card rotations
     document.querySelectorAll('.card-wrapper').forEach((wrap, i) => {
