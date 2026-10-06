@@ -283,6 +283,11 @@
   width: 100%;
 }
 
+/* когда карточка перевёрнута — разрешаем скролл на обороте */
+.card-inner.flipped .card-back {
+  overflow: visible;
+}
+
     /* double frame */
     .card-face::before {
       content: '';
@@ -358,85 +363,95 @@
       letter-spacing: 0.03em;
     }
 
-    /* BACK */
-    .card-back {
-      background: linear-gradient(
-        165deg,
-        #FFFDF8 0%,
-        #F7F0E4 40%,
-        #F0E6D6 100%
-      );
-      transform: rotateY(180deg);
-      display: flex;
-      flex-direction: column;
-      box-shadow: 
-        0 10px 28px rgba(0,0,0,0.5),
-        0 0 40px rgba(253, 250, 243, 0.12),
-        inset 0 0 60px rgba(255, 252, 245, 0.6);
-    }
+/* BACK */
+.card-back {
+  background: linear-gradient(
+    165deg,
+    #FFFDF8 0%,
+    #F7F0E4 40%,
+    #F0E6D6 100%
+  );
+  transform: rotateY(180deg);
+  box-shadow: 
+    0 10px 28px rgba(0,0,0,0.5),
+    0 0 40px rgba(253, 250, 243, 0.12),
+    inset 0 0 60px rgba(255, 252, 245, 0.6);
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+}
 
-    .card-back::after {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background: radial-gradient(
-        ellipse at 50% 20%,
-        rgba(255,255,255,0.55) 0%,
-        transparent 60%
-      );
-      pointer-events: none;
-      z-index: 1;
-    }
+.card-back::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    ellipse at 50% 20%,
+    rgba(255,255,255,0.55) 0%,
+    transparent 60%
+  );
+  pointer-events: none;
+  z-index: 1;
+}
 
-    .card-back-content {
-  position: relative;
+.card-back-content {
+  position: absolute;
+  inset: 0;
   z-index: 2;
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  padding: 22px 20px 18px;
-  overflow: hidden;
-  min-height: 0; /* critical for flex overflow */
-  height: 100%;
+  padding: 0;
+  box-sizing: border-box;
+  display: block;
 }
 
 .card-back-from {
+  position: absolute;
+  top: 18px;
+  left: 18px;
+  right: 18px;
   font-size: 0.68rem;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--red);
-  margin-bottom: 12px;
   opacity: 0.9;
-  flex-shrink: 0;
+  z-index: 3;
 }
 
 .card-back-text {
-  flex: 1 1 auto;
-  min-height: 0; /* critical for flex overflow */
+  position: absolute;
+  top: 48px;
+  left: 16px;
+  right: 10px;
+  bottom: 22px;
   overflow-y: auto;
+  overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
+  touch-action: pan-y;
   font-size: 0.88rem;
   line-height: 1.55;
   color: #2A2218;
   font-family: 'Noto Serif SC', serif;
-  padding-right: 6px;
-  touch-action: pan-y;
+  padding: 0 8px 8px 2px;
+  -webkit-transform: translate3d(0,0,0);
+  transform: translate3d(0,0,0);
 }
-    .card-back-text::-webkit-scrollbar {
-      width: 3px;
-    }
-    .card-back-text::-webkit-scrollbar-thumb {
-      background: rgba(194, 14, 13, 0.35);
-      border-radius: 3px;
-    }
 
-    .card-back-footer {
-      flex-shrink: 0;
-      margin-top: 12px;
-      height: 1px;
-      background: linear-gradient(90deg, transparent, rgba(194,14,13,0.35), transparent);
-    }
+.card-back-text::-webkit-scrollbar {
+  width: 3px;
+}
+.card-back-text::-webkit-scrollbar-thumb {
+  background: rgba(194, 14, 13, 0.4);
+  border-radius: 3px;
+}
+
+.card-back-footer {
+  position: absolute;
+  bottom: 14px;
+  left: 20px;
+  right: 20px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(194,14,13,0.35), transparent);
+  z-index: 3;
+}
 
     /* emoji badges */
     .emoji {
@@ -488,7 +503,9 @@
     .particle:nth-child(3) { top: 70%; left: 20%; animation-delay: 4s; }
     .particle:nth-child(4) { top: 25%; left: 70%; animation-delay: 1s; width: 2px; height: 2px; }
     .particle:nth-child(5) { top: 85%; left: 60%; animation-delay: 3s; }
-
+    .card-wrapper.is-flipped {
+  transform: rotate(0deg) !important;
+}
     @keyframes float {
       0%, 100% { transform: translateY(0) scale(1); opacity: 0.12; }
       50% { transform: translateY(-18px) scale(1.2); opacity: 0.28; }
@@ -700,7 +717,9 @@
     // Flip cards on click / tap
 // Flip cards on click / tap
 // Flip cards on click / tap (ignore if user was scrolling the text)
+// Flip cards on click / tap (ignore if user was scrolling the text)
 document.querySelectorAll('[data-card]').forEach(card => {
+  const wrapper = card.closest('.card-wrapper');
   let touchStartY = 0;
   let didScroll = false;
 
@@ -710,27 +729,39 @@ document.querySelectorAll('[data-card]').forEach(card => {
   }, { passive: true });
 
   card.addEventListener('touchmove', (e) => {
-    if (Math.abs(e.touches[0].clientY - touchStartY) > 8) {
+    if (Math.abs(e.touches[0].clientY - touchStartY) > 6) {
       didScroll = true;
     }
   }, { passive: true });
 
-  card.addEventListener('click', (e) => {
-    // if the click originated from scrolling the text area — do not flip
+  card.addEventListener('click', () => {
     if (didScroll) {
       didScroll = false;
       return;
     }
     card.classList.toggle('flipped');
+
+    // убираем декоративный наклон — критично для скролла на телефоне
+    if (wrapper) {
+      if (card.classList.contains('flipped')) {
+        wrapper.classList.add('is-flipped');
+        wrapper.style.transform = 'rotate(0deg)';
+      } else {
+        wrapper.classList.remove('is-flipped');
+        const base = parseFloat(wrapper.dataset.baseRotate || '0');
+        wrapper.style.transform = `rotate(${base}deg)`;
+      }
+    }
   });
 });
 
-    // slight random jitter for card rotations
-    document.querySelectorAll('.card-wrapper').forEach((wrap, i) => {
-      const base = [-2.8, 2.4, -1.9, 3.1, -2.2][i];
-      const jitter = (Math.random() - 0.5) * 0.7;
-      wrap.style.transform = `rotate(${base + jitter}deg)`;
-    });
+document.querySelectorAll('.card-wrapper').forEach((wrap, i) => {
+  const base = [-2.8, 2.4, -1.9, 3.1, -2.2][i];
+  const jitter = (Math.random() - 0.5) * 0.7;
+  const final = base + jitter;
+  wrap.dataset.baseRotate = final;
+  wrap.style.transform = `rotate(${final}deg)`;
+});
 
     // pause marquee on touch
     const track = document.querySelector('.marquee-track');
